@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>API карт 2ГИС</title>
+        <script type="text/javascript" src="./admin_level_9.geojson"></script>
+        <script type="text/javascript" src="./perm_district.json"></script>
+        <script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+        <script type="text/javascript">
+            var map;
+            var regionsAreas = [];
+            var currentArea;
+            DG.then(function () {
+                map = DG.map('map', {
+                    center: [58.00118522243253, 56.232147216796875],
+                    zoom: 13
+                });
+
+                //Инициализация списка облостей районов
+                for(var i in regions){
+                  var reg = regions[i];
+                  var cooardinates = DG.GeoJSON.coordsToLatLngs(reg.geometry.coordinates[0],1);
+                  regionsAreas[reg.id] = cooardinates;
+                }
+
+                onReagionChanged();
+
+            }
+
+
+          );
+
+
+
+              function onReagionChanged(){
+                if(currentArea !== null && currentArea !== undefined)
+                    currentArea.remove();
+
+                var select = document.getElementById("select")
+                var selectedValue = select.options[select.selectedIndex].value;
+                var polyline = DG.polygon(regionsAreas[selectedValue], {color:'red', weight: 1}).addTo(map);
+                currentArea = polyline;
+              }
+
+              function clearPolygonLayer(){
+
+              }
+        </script>
+
+    </head>
+    <body>
+        <div><select id="select"  onChange="onReagionChanged()">
+	           <option value="1268697">Ленинский район</option>
+	           <option value="4030715">Индустриальный район</option>
+	            <option value="1268693">Мотовилихинский район</option>
+	             <option value="1268696">Дзержинский район</option>
+               <option value="1268692">Орджоникидзевский район</option>
+               <option value="1268699">Свердовский район</option>
+               <option  value="1268698">Кировский район</option>
+
+             </select>
+            </div>
+        <div id="map" style="width:640px; height:480px; margin: 32px 0px"></div>
+    </body>
+</html>
