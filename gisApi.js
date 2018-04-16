@@ -1,11 +1,11 @@
 var key = "ruqqpo1879"
-var url = `http://catalog.api.2gis.ru/2.0/catalog/branch/search?key=${key}&format=json&region_id=1`
+var url = `https://catalog.api.2gis.ru/2.0/catalog/branch/search?key=${key}&format=json&region_id=1`
 
-var rubricItemsUrl = `http://catalog.api.2gis.ru/2.0/catalog/branch/search?key=${key}&region_id=16&format=json&page_size=50&fields=items.point`
+var rubricItemsUrl = `https://catalog.api.2gis.ru/2.0/catalog/branch/search?key=${key}&region_id=16&format=json&page_size=50&fields=items.point`
 
-var rubricUrl = `http://catalog.api.2gis.ru/2.0/catalog/rubric/list?key=${key}&region_id=16&format=json`
+var rubricUrl = `https://catalog.api.2gis.ru/2.0/catalog/rubric/list?key=${key}&region_id=16&format=json`
 
-var urlRegion = `http://catalog.api.2gis.ru/2.0/geo/list?key=${key}&region_id=16&type=adm_div.district&fields=items.geometry.selection`
+var urlRegion = `https://catalog.api.2gis.ru/2.0/geo/list?key=${key}&region_id=16&type=adm_div.district&fields=items.geometry.selection`
 
 function getRubricItems(rubricName, districtId, page, allItems){
 

@@ -130,8 +130,8 @@
                     }
 
               function calculatePopulationRatio(itemCount){
-
-                  var popupContent = "<br> Информация о ${currentRegion.name} район </br> <p><br> Население: </br>" + population[currentRegion.name] + "</p>" +
+                  var regionName = currentRegion.name;
+                  var popupContent = "<br> Информация о " + regionName +" район </br> <p><br> Население: </br>" + population[currentRegion.name] + "</p>" +
                       "<p><br>Количество заведений: </br>"  + itemCount + "</p>";
 
                       currentArea.bindPopup(popupContent).openPopup();
