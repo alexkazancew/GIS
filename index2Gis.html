@@ -6,30 +6,77 @@
         <script type="text/javascript" src="./admin_level_9.geojson"></script>
         <script type="text/javascript" src="./perm_district.json"></script>
         <script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+        <script src="./gisApi.js" type="text/javascript"></script>
         <script type="text/javascript">
+
+        var maxPopulation = 219115;
+        var minPopulation = 54783;
+        //Евристически выбранные значения для максимального и минимального числа
+        // заведений в районе
+        var maxItems = 300;
+        var minItems = 50;
+
+        var population = {
+        "Дзержинский":166292,
+        "Индустриальный":168956,
+        "Кировский": 131204,
+        "Ленинский": 54783,
+        "Мотовилихинский": 192283,
+        "Орджоникидзевский":  115372,
+        "Свердловский": 219115
+      };
+
             var map;
             var regionsAreas = [];
             var currentArea;
+            var currentRegion;
+            var currentMarkers = []
+            var allRubrics = [];
+            var currentRubric;
+
             DG.then(function () {
                 map = DG.map('map', {
                     center: [58.00118522243253, 56.232147216796875],
                     zoom: 13
                 });
 
-                //Инициализация списка облостей районов
-                for(var i in regions){
-                  var reg = regions[i];
-                  var cooardinates = DG.GeoJSON.coordsToLatLngs(reg.geometry.coordinates[0],1);
-                  regionsAreas[reg.id] = cooardinates;
-                }
-
-                onReagionChanged();
-
+                getRegions(onRegionReceived);
             }
-
-
           );
 
+          function onRegionReceived(regions){
+            var obj = JSON.parse(regions);
+            var result = obj.result;
+            var items = result.items;
+
+            for(var i in items)
+            {
+              var item = items[i]
+              regionsAreas[item.id] = item
+
+              var select = document.getElementById("select")
+              var option = document.createElement("option");
+              option.value = item.id
+              option.text = item.name;
+              select.add(option);
+            }
+          }
+
+          function onRubricsReceived(rubrics){
+              var result = rubrics.result;
+              var items = result.items;
+
+                for(var i in items){
+
+                  var item = items[i]
+                  allRubrics[item.id] = item
+                  select = document.getElementById("rubric")
+                  option = document.createElement("option");
+                  option.value = item.id
+                  option.text = item.name;
+                  select.add(option);
+              }
+          }
 
 
               function onReagionChanged(){
@@ -38,27 +85,116 @@
 
                 var select = document.getElementById("select")
                 var selectedValue = select.options[select.selectedIndex].value;
-                var polyline = DG.polygon(regionsAreas[selectedValue], {color:'red', weight: 1}).addTo(map);
+                var geometry  = regionsAreas[selectedValue].geometry.selection;
+
+                var polygonObject = DG.Wkt.toLatLngs(geometry)
+                var polyline = DG.polygon(polygonObject, {color:'red', weight:2, opacity:0.6}).addTo(map);
                 currentArea = polyline;
+                currentRegion = regionsAreas[selectedValue];
+                onRubricChanged();
               }
 
-              function clearPolygonLayer(){
+              function onRubricChanged(){
+                // if(currentRubric !== null && currentRubric !== undefined)
+                //     currentRubric.remove();
+
+                var select = document.getElementById("rubric")
+                var selectedValue = select.options[select.selectedIndex].value;
+                currentRubric = selectedValue
+
+
+                var rubrics = getRubricItems(currentRubric, currentRegion.id, 1, []);
+                rubrics.then(rubrics =>
+                  {
+                    onRubricItemsReceived(rubrics);
+                  });
+
 
               }
+
+              function onRubricItemsReceived(rubrics){
+                  clearCurrentMarkers();
+                    for(var i in rubrics){
+                            var item = rubrics[i];
+                              var point = item.point
+                              var marker = DG.marker(point);
+                              marker.alt = item.id
+                              var content = "<p>Название: " + item.name + "</p> <p>Адресс: " + item.address_name + "</p>"
+                              marker.bindPopup(content).openPopup();
+
+                              currentMarkers[item.id] = marker;
+                              marker.addTo(map);
+                        }
+
+                        calculatePopulationRatio(rubrics.length);
+                    }
+
+              function calculatePopulationRatio(itemCount){
+
+                  var popupContent = "<br> Информация о ${currentRegion.name} район </br> <p><br> Население: </br>" + population[currentRegion.name] + "</p>" +
+                      "<p><br>Количество заведений: </br>"  + itemCount + "</p>";
+
+                      currentArea.bindPopup(popupContent).openPopup();
+
+                  if(itemCount<minItems){
+                    minItems = itemCount;
+                  }
+
+                  if(itemCount>maxItems){
+                    maxItems = itemCount;
+                  }
+
+                  var districtName = currentRegion.name;
+                  var populationCurrentDistrict = population[districtName];
+                  var ratio =itemCount/ populationCurrentDistrict;
+                  var maxRatio = maxItems / minPopulation;
+                  var minRatio = minItems / maxPopulation;
+                  var difference = maxRatio - minRatio;
+                  var newRatio = (ratio - minRatio) / difference;
+
+                  var color = getRatioColor(newRatio);
+                  currentArea.setStyle({color:color});
+              }
+
+              function getRatioColor(ratio){
+                  var green = Math.ceil(255 * ratio);
+                  var red = 255 - green;
+                  var blue = 0;
+                  return rgbToHex(red, green, blue);
+              }
+
+              function componentToHex(c) {
+                  var hex = c.toString(16);
+                  return hex.length == 1 ? "0" + hex : hex;
+              }
+
+              function rgbToHex(r, g, b) {
+                  return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+              }
+
+              function clearCurrentMarkers()
+              {
+                  for(var i in currentMarkers){
+                     var item = currentMarkers[i];
+                     item.remove();
+                  }
+              }
+
         </script>
 
     </head>
     <body>
         <div><select id="select"  onChange="onReagionChanged()">
-	           <option value="1268697">Ленинский район</option>
-	           <option value="4030715">Индустриальный район</option>
-	            <option value="1268693">Мотовилихинский район</option>
-	             <option value="1268696">Дзержинский район</option>
-               <option value="1268692">Орджоникидзевский район</option>
-               <option value="1268699">Свердовский район</option>
-               <option  value="1268698">Кировский район</option>
-
+              <option disabled>Выберите район</option>
              </select>
+
+             <select id="rubric" onChange="onRubricChanged()">
+               <optoin disabled selected>Выберите рубрику</option>
+               <option value="Аптека">Аптеки</option>
+               <option value="Кафе">Кафе</option>
+               <option value="Продовольственные магазины">Продовольственные магазины</option>
+             </select>
+
             </div>
         <div id="map" style="width:640px; height:480px; margin: 32px 0px"></div>
     </body>
